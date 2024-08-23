@@ -1,4 +1,4 @@
-package main
+package main2
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"runtime/trace"
-	"sync"
 	"time"
 )
 
@@ -69,9 +68,8 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func listCourseWorkFromCourseId(srv *classroom.Service, courseId string, ctx context.Context, ch chan *classroom.CourseWork, wg *sync.WaitGroup) {
+func listCourseWorkFromCourseId(srv *classroom.Service, courseId string, ctx context.Context) {
 	defer trace.StartRegion(ctx, "list coursework from "+courseId).End()
-	defer wg.Done()
 	r, err := srv.Courses.CourseWork.List(courseId).Do()
 	if err != nil {
 		log.Fatalf("課題を取得できませんでした: %v", err)
@@ -79,16 +77,10 @@ func listCourseWorkFromCourseId(srv *classroom.Service, courseId string, ctx con
 	if len(r.CourseWork) <= 0 {
 		return
 	}
-	var wg2 sync.WaitGroup
-	defer wg2.Wait()
 	for _, c := range r.CourseWork {
-		wg2.Add(1)
-		go func() {
-			defer wg2.Done()
-			if isVisible, err := isCourseworkVisible(srv, c, ctx); isVisible && err == nil {
-				ch <- c
-			}
-		}()
+		if isVisible, err := isCourseworkVisible(srv, c, ctx); isVisible && err == nil {
+			fmt.Printf("%s (%s) link:%s\n", c.Title, c.Id, c.AlternateLink)
+		}
 	}
 }
 
@@ -140,10 +132,10 @@ func main() {
 	}
 	defer trace.Stop()
 
-	_main()
+	_main2()
 }
 
-func _main() {
+func _main2() {
 	ctx2, task := trace.NewTask(context.Background(), "List course work")
 	defer task.End()
 
@@ -178,20 +170,7 @@ func _main() {
 		"604108757787", //情報システム設計Ⅱ2024
 		"660396558271", //図形処理工学Ｉ【2年生】
 	}
-	ch := make(chan *classroom.CourseWork)
-	var wg sync.WaitGroup
-
 	for _, courseId := range courseIds {
-		wg.Add(1) // ゴルーチンを追加
-		go listCourseWorkFromCourseId(srv, courseId, ctx2, ch, &wg)
-	}
-	go func() {
-		defer trace.StartRegion(ctx, "チャンネルクローズ").End()
-		wg.Wait()
-		close(ch) // ゴルーチンの終了後にチャネルを閉じる
-	}()
-
-	for c := range ch {
-		fmt.Printf("%s (%s) link:%s\n", c.Title, c.Id, c.AlternateLink)
+		listCourseWorkFromCourseId(srv, courseId, ctx2)
 	}
 }
