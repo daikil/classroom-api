@@ -1,4 +1,5 @@
-package main2
+// 並行処理なし
+package main
 
 import (
 	"context"
@@ -132,10 +133,10 @@ func main() {
 	}
 	defer trace.Stop()
 
-	_main2()
+	_main()
 }
 
-func _main2() {
+func _main() {
 	ctx2, task := trace.NewTask(context.Background(), "List course work")
 	defer task.End()
 
@@ -158,17 +159,7 @@ func _main2() {
 	}
 
 	courseIds := []string{
-		"681205615668", //5019データ通信工学Ⅰ
-		"684704532100", //ソフトII（PYTHON)　【2年生】
-		"675996740013", //5041ソフトウェア工学実習II-2
-		"678236833659", //ソフトウエア工学実習Ⅱ-1
-		"652602355337", //情報工学特別講座　R06
-		"312535887497", //5043図形処理実習
-		"660443542825", //5049基礎セミナー
-		"672617426805", //5041データ通信実習Ⅰ
-		"672617014173", //5046アプリケーション技術Ⅱ
-		"604108757787", //情報システム設計Ⅱ2024
-		"660396558271", //図形処理工学Ｉ【2年生】
+		///
 	}
 	for _, courseId := range courseIds {
 		listCourseWorkFromCourseId(srv, courseId, ctx2)
